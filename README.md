@@ -89,7 +89,7 @@ For reach-avoid problems, you can optionally use a discount factor gamma to enco
   <img src="assets/narrow_passage.gif" width="49%" alt="F1Tenth sampling-based DCBF safety filter on a held-out track" />
 </p>
 
-### LessLinearND (reach, BRT) (~1h)
+### Publisher-Subscriber (LessLinearND) (reach, BRT) (~1h)
 ```bash
 # 40D
 python train.py --opt DYNAMICS.CLASS LessLinearND IO.EXP_NAME less_linear40D \
