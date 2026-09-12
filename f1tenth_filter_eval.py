@@ -57,7 +57,7 @@ def build_argparser():
     p.add_argument("--threshold", type=float, default=0.1, help="Safety-value threshold V-thr.")
     p.add_argument("--v_init_min", type=float, default=0.2,
                    help="Only start episodes from states with value V > this (rejection-sampled).")
-    p.add_argument("--target_speed", type=float, default=8.0, help="MPPI target speed (m/s).")
+    p.add_argument("--target_speed", type=float, default=10.0, help="MPPI target speed (m/s).")
     p.add_argument("--mppi_horizon", type=int, default=10)
     p.add_argument("--mppi_threads", type=int, default=32)
     p.add_argument("--mppi_lambda", type=float, default=1000.0)
@@ -131,7 +131,9 @@ def main():
 
     if args.filter == "lr":
         filt = LeastRestrictiveF1TenthFilter(dyn, value_net, policy_net, tidx, eval_t,
-                                             threshold=args.threshold)
+                                             threshold=args.threshold,
+                                             filter_rollout_dt=args.filter_rollout_dt,
+                                             filter_rollout_steps=args.filter_rollout_steps)
     elif args.filter == "sb":
         filt = SamplingF1TenthFilter(dyn, value_net, policy_net, tidx, eval_t,
                                      filter_rollout_dt=args.filter_rollout_dt,

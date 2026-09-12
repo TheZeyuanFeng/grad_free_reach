@@ -33,13 +33,16 @@ from utils import decode_actions
 
 
 class _BaseF1TenthFilter:
-    def __init__(self, dyn, value_net, policy_net, track_idx, eval_t, threshold=0.0):
+    def __init__(self, dyn, value_net, policy_net, track_idx, eval_t, threshold=0.0,
+                 filter_rollout_dt=0.05, filter_rollout_steps=3):
         self.dyn = dyn
         self.value_net = value_net
         self.policy_net = policy_net
         self.track_idx = float(track_idx)
         self.eval_t = float(eval_t)
         self.threshold = float(threshold)
+        self.filter_rollout_dt = float(filter_rollout_dt)
+        self.filter_rollout_steps = int(filter_rollout_steps)
         self._dtype = dyn.dtype
 
         # Jit the (raw) value forward -- renders the BEV internally -- once; reused
@@ -55,6 +58,21 @@ class _BaseF1TenthFilter:
             u, _ = decode_actions(out, dyn)
             return u
         self._pi_action = _pi_action
+
+        # Internal look-ahead: roll a control batch forward filter_rollout_dt using
+        # filter_rollout_steps Euler substeps (independent of the outer control/sim
+        # step). Shared by the LR next-state check and the SB CBF constraint.
+        dt_sub = self.filter_rollout_dt / self.filter_rollout_steps
+        n_sub = self.filter_rollout_steps
+
+        @nnx.jit
+        def _rollout(x8, u_batch):
+            d = jnp.zeros((u_batch.shape[0], 0), dtype=x8.dtype)
+            def body(x, _):
+                return dyn.wrap_state(x + dt_sub * dyn.f(x, u_batch, d)), None
+            xf, _ = jax.lax.scan(body, x8, None, length=n_sub)
+            return xf
+        self._rollout = _rollout
 
     # -- state helpers -------------------------------------------------
     def _x8(self, s_np, n=1):
@@ -78,13 +96,25 @@ class _BaseF1TenthFilter:
 
 
 class LeastRestrictiveF1TenthFilter(_BaseF1TenthFilter):
+    """Pass ``u_nom`` through while it keeps the car safe, else switch to the
+    learned safety policy. Safety is judged anticipatorily: the current value and
+    the value of the nominal next state are both checked, and the filter overrides
+    when the *smaller* drops below ``threshold`` (so it reacts before ``u_nom``
+    can carry the car out of the safe set)."""
+
     def filter_control(self, u_nom: np.ndarray, state: np.ndarray) -> dict:
-        V = float(self._v(self.value_net, self._x8(state), self._t())[0])
-        Vc = V - self.threshold
+        u_nom = np.asarray(u_nom, np.float32)
+        x_cur = self._x8(state)
+        x_next = self._rollout(x_cur, jnp.asarray(u_nom)[None])
+        # One batched value query for both the current and nominal-next state.
+        V = np.asarray(self._v(self.value_net, jnp.concatenate([x_cur, x_next], 0),
+                               self._t(2)))
+        V_cur, V_next = float(V[0]), float(V[1])
+        Vc = min(V_cur, V_next) - self.threshold
         if Vc < 0.0:
             u = self._safety_action(state)
-            return {"u": np.asarray(u, np.float32), "v": V, "active": 1.0}
-        return {"u": np.asarray(u_nom, np.float32).copy(), "v": V, "active": 0.0}
+            return {"u": np.asarray(u, np.float32), "v": V_cur, "active": 1.0}
+        return {"u": u_nom.copy(), "v": V_cur, "active": 0.0}
 
 
 class SamplingF1TenthFilter(_BaseF1TenthFilter):
@@ -103,9 +133,9 @@ class SamplingF1TenthFilter(_BaseF1TenthFilter):
                  filter_rollout_dt=0.1, filter_rollout_steps=3, gamma=2.0,
                  threshold=0.0, n_samples=32, noise_std=0.3, turn_weight=0.25,
                  seed=0):
-        super().__init__(dyn, value_net, policy_net, track_idx, eval_t, threshold)
-        self.filter_rollout_dt = float(filter_rollout_dt)
-        self.filter_rollout_steps = int(filter_rollout_steps)
+        super().__init__(dyn, value_net, policy_net, track_idx, eval_t, threshold,
+                         filter_rollout_dt=filter_rollout_dt,
+                         filter_rollout_steps=filter_rollout_steps)
         self.gamma = float(gamma)
         self.n_samples = int(n_samples)
         self.noise_std = float(noise_std)
@@ -117,19 +147,6 @@ class SamplingF1TenthFilter(_BaseF1TenthFilter):
         self._sel_w = np.array([float(turn_weight), 1.0], np.float32)
         signs = np.array([[-1, -1], [-1, 1], [1, -1], [1, 1]], np.float32)
         self._bang = signs * self._u_max                         # (4, 2)
-
-        dt_sub = self.filter_rollout_dt / self.filter_rollout_steps
-        n_sub = self.filter_rollout_steps
-
-        @nnx.jit
-        def _rollout(x8, u_batch):
-            # x8: (B,8), u_batch: (B,2). Roll forward filter_rollout_dt with the JAX dyn.
-            d = jnp.zeros((u_batch.shape[0], 0), dtype=x8.dtype)
-            def body(x, _):
-                return dyn.wrap_state(x + dt_sub * dyn.f(x, u_batch, d)), None
-            xf, _ = jax.lax.scan(body, x8, None, length=n_sub)
-            return xf
-        self._rollout = _rollout
 
     def _sample_controls(self, u_nom):
         # nom(1) + bang(4) + gauss(16) + uniform(rest); truncate to n_samples if

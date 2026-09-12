@@ -107,7 +107,7 @@ def _cost(x, v_max, lx_grid):
     cost = np.linalg.norm(x[3] - v_max) * 0.5      # penalize being slow
     cost += 0.5 * x[5] ** 2                          # penalize yaw rate
     lx = lx_grid(x[0:2])
-    cost += 0.1 * (lx_grid.lx_max - max(lx, 0.25))    # penalize staying centered
+    cost += 0.1 * (lx_grid.lx_max - max(lx, 0.2))    # penalize staying centered
     if lx < 0:
         cost += -1000.0 * lx                         # heavy collision penalty
     return cost
