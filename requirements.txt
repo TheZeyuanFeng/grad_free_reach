@@ -1,0 +1,16 @@
+# Core -- training (train.py), eval (eval.py, f1tenth_filter_eval.py), and the
+# reachability/ package.
+#
+# NOTE: install jax separately (GPU or CPU build) -- see the README. It is left
+# out here so the CUDA/CPU choice is explicit.
+numpy==2.4.6
+scipy==1.17.1
+matplotlib==3.11.0
+PyYAML==6.0.3
+tqdm==4.68.2
+flax==0.12.7
+optax==0.2.8
+orbax-checkpoint==0.12.1
+
+# Optional -- only if IO.USE_WANDB=True (imported lazily; training/eval work without it).
+wandb

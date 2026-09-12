@@ -1,0 +1,9 @@
+runs
+tmp
+vids
+datasets/tracks
+wandb
+__pycache__**
+.vscode
+.claude
+.jax_cache
