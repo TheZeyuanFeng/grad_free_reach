@@ -132,7 +132,7 @@ python train.py --opt \
   FINETUNE.FP_LAMBDA 30.0 NET.POLICY.ARCH vqpolmultinet
 ```
 Note that our command here train the gate avoidance problem for 2 seconds to converge instead of 1 second. Hence the results differs from the reported numbers in the paper. Setting `GAME.TIME.T 2.0` will reproduce the same (if not better) results.
-### Pursuit-Evasion (10D, BRAT) (~3h)
+### Pursuit-Evasion (10D, BRAT) (~1.5h)
 ```bash
 python train.py --opt \
   DYNAMICS.CLASS PursuitEvasion IO.EXP_NAME pursuit_evade \
@@ -152,7 +152,7 @@ This is a long-horizon heterogeneous two-player zero-sum game. Have fun playing 
 
 
 
-### F1Tenth with BEV image inputs (safety, BRT) (~2h)
+### F1Tenth with BEV image inputs (safety, BRT) (~1h)
 
 The value/policy nets are conditioned on a 128×128 ego-centric bird's-eye view rendered from occupancy maps. First verify the tracks load and the signed-distance fields build:
 
