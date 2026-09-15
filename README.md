@@ -145,7 +145,7 @@ MPLBACKEND=TkAgg python evade_pursuit_sim_keyboard.py --run_dir runs/pursuit_eva
 MPLBACKEND=TkAgg python evade_pursuit_sim_keyboard.py --run_dir runs/pursuit_evade --human pursuer
 MPLBACKEND=TkAgg python evade_pursuit_sim_keyboard.py --run_dir runs/pursuit_evade --show_ai  # AI vs AI
 ```
-This is a long-horizon heterogeneous two-player zero-sum game. Have fun playing with the AI agents! Please note that our framework does break the non-anticipative strategy assumption for the disturbance player, so it will be slightly less powerful.
+This is a long-horizon heterogeneous two-player zero-sum game (2 slower 3D Dubins pursuers v.s. 1 faster 4D Dubins evader). Have fun playing with the AI agents! Please note that our framework does break the non-anticipative strategy assumption for the disturbance player, so it will be slightly less powerful.
 <p align="center">
   <img src="assets/pursuit_evade.gif" width="50%" alt="Pursuit-evasion game" />
 </p>
