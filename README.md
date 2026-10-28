@@ -5,9 +5,10 @@ reachability more robustly and efficiently to high-dimensional systems.
 It computes Backward Reachable Tubes (BRT), Backward Reachable Sets (BRS), and Backward Reachable Avoid Tubes (BRAT) for optimal control problems, robust optimal control problems, and two-player zero-sum games. 
 We additionally include implementation for a least-restrictive safety filter and a sampling-based DCBF filter for deployment.
 
-We migrated our original code to this JAX implementation. So, please expect better performance and less training time than those reported in the paper XD.
-> **Paper:** *Gradient-Free Neural Hamilton-Jacobi Reachability for Scalable
-> Safety-Critical Control* — Z. Feng, A. F. Sahin, S. Thorup, S. Bansal. CoRL 2026.
+> [**Paper:** *Gradient-Free Neural Hamilton-Jacobi Reachability for Scalable
+> Safety-Critical Control*](https://arxiv.org/abs/2609.14087) — Zeyuan Feng*, Ali Fuat Sahin*, Santiago Thorup, Somil Bansal. CoRL 2026.
+
+Disclamer: This updated codebase after paper acceptance achieves significant better results than those reported in the initial manuscripts. Papers submitted before October 2026 may report results of our method using the original codebase.
 
 
 ---
@@ -220,7 +221,9 @@ Subclass `reachability.dynamics.base.Dynamics`, implement `f(x, u, d)`, `l(x)`, 
 ---
 
 ## Hyper-Parameter Tuning
-Usually, the default training is quite robust. However, if the results are not satisfying, you can start with tuning dt and the FP_lambda. If they still don't work, consider making the convergence checker stricter or increasing the number of total MC data samples (num samples per batch * num batches).
+Usually, the default training is quite robust. However, if the results are not satisfying, you can start with tuning dt and the FP_lambda. If they still don't work, consider making the convergence checker stricter or increasing the number of total MC data samples (num samples per batch * num batches). 
+
+Notably, the default behavior of generating MC samples in this codebase is to rollout the policies for the entiring horizon, instead of using the method stated in the paper---rolling out only within the current window and bootstrap with the boundary value of the previous window. The full-horizon MC rollout slightly improves the robustness of training while demanding more GPU memory. For tasks with really long horizons, consider setting `FINETUNE.FULL_HORIZON_MC` to `False` when having limited CUDA memory.
 
 ---
 
