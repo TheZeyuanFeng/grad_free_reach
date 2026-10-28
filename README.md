@@ -8,7 +8,7 @@ We additionally include implementation for a least-restrictive safety filter and
 > [**Paper:** *Gradient-Free Neural Hamilton-Jacobi Reachability for Scalable
 > Safety-Critical Control*](https://arxiv.org/abs/2609.14087) — Zeyuan Feng*, Ali Fuat Sahin*, Santiago Thorup, Somil Bansal. CoRL 2026.
 
-Disclamer: This updated codebase after paper acceptance achieves significant better results than those reported in the initial manuscripts. Papers submitted before October 2026 may report results of our method using the original codebase.
+Disclaimer: This codebase updated after paper acceptance achieves significant better results than those reported in the initial manuscripts. Papers submitted before October 2026 may report (worse) results of our method using the original codebase.
 
 
 ---
